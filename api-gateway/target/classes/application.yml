@@ -1,0 +1,13 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+#Product Service route
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true

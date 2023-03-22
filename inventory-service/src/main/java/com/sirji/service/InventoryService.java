@@ -43,6 +43,8 @@ public class InventoryService {
         for (InventoryResponse i: inventoryResponses) {
             inventories.add(i.getInventories());
         }
+
+
         return inventories;
 
     }

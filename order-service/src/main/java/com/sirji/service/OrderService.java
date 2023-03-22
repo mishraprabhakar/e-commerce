@@ -1,6 +1,5 @@
 package com.sirji.service;
 
-import com.sirji.dto.InventoryResponse;
 import com.sirji.dto.OrderLineItemsDto;
 import com.sirji.dto.OrderRequest;
 import com.sirji.model.Order;
@@ -12,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -36,18 +36,24 @@ public class OrderService {
                 .toList();
 
         //Call inventory service, and place order if product is in stock
-        InventoryResponse[] inventories = webClientBuilder.build().get()
+        Map[] inventories = webClientBuilder.build().get()
                 .uri("http://inventory-service/api/inventory",
                         uriBuilder -> uriBuilder
                                 .queryParam("skuCode", skuCodes).build())
                 .retrieve()
-                .bodyToMono(InventoryResponse[].class)
+                .bodyToMono(Map[].class)
                 .block();
 
         boolean allProductsInStock = true;
 
+        for (Map e : inventories) {
 
-
+            System.out.println(e.containsValue(false));
+            if (e.containsValue(false)){
+                allProductsInStock = false;
+                break;
+            }
+        }
 
         if(allProductsInStock){
             repository.save(order);

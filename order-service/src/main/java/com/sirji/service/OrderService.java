@@ -10,9 +10,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,7 +26,7 @@ public class OrderService {
         order.setOrderNumber(UUID.randomUUID().toString());
         List<OrderLineItems> orderLineItems = orderRequest.getOrderLineItems()
                 .stream()
-                .map(orderLineItemsDto -> mapToDto(orderLineItemsDto))
+                .map(this::mapToDto)
                 .toList();
         order.setOrderLineItems(orderLineItems);
 
@@ -38,16 +36,17 @@ public class OrderService {
                 .toList();
 
         //Call inventory service, and place order if product is in stock
-        InventoryResponse[] inventoryResponseArray = webClientBuilder.build().get()
+        InventoryResponse[] inventories = webClientBuilder.build().get()
                 .uri("http://inventory-service/api/inventory",
                         uriBuilder -> uriBuilder
-                                .queryParam("skuCode",skuCodes).build())
+                                .queryParam("skuCode", skuCodes).build())
                 .retrieve()
                 .bodyToMono(InventoryResponse[].class)
                 .block();
 
-        boolean allProductsInStock = Arrays.stream(inventoryResponseArray)
-                .allMatch(InventoryResponse::isInStock);
+        boolean allProductsInStock = true;
+
+
 
 
         if(allProductsInStock){

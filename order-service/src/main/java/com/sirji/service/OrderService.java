@@ -48,7 +48,6 @@ public class OrderService {
 
         for (Map e : inventories) {
 
-            System.out.println(e.containsValue(false));
             if (e.containsValue(false)){
                 allProductsInStock = false;
                 break;

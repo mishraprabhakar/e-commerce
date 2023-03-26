@@ -8,7 +8,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8180/realms/spring-boot-microservice-realm
+          issuer-uri: http://localhost:8100/realms/spring-boot-microservice-realm
 
   #Product Service route
   cloud:

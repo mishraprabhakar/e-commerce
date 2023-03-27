@@ -1,12 +1,12 @@
 package com.sirji.controller;
 
-import com.sirji.dto.InventoryResponse;
 import com.sirji.service.InventoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/inventory")
@@ -17,7 +17,7 @@ public class InventoryController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<InventoryResponse> isInStock(@RequestParam List<String> skuCode){
+    public List<Map<String, Boolean>> isInStock(@RequestParam List<String> skuCode) {
         return service.isInStock(skuCode);
     }
 }

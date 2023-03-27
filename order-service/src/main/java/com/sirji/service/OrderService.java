@@ -1,6 +1,5 @@
 package com.sirji.service;
 
-import com.sirji.dto.InventoryResponse;
 import com.sirji.dto.OrderLineItemsDto;
 import com.sirji.dto.OrderRequest;
 import com.sirji.model.Order;
@@ -10,10 +9,9 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -23,12 +21,12 @@ public class OrderService {
 
     private final OrderRepository repository;
     private final WebClient.Builder webClientBuilder;
-    public void placeOrder(OrderRequest orderRequest) {
+    public String placeOrder(OrderRequest orderRequest) {
         Order order = new Order();
         order.setOrderNumber(UUID.randomUUID().toString());
         List<OrderLineItems> orderLineItems = orderRequest.getOrderLineItems()
                 .stream()
-                .map(orderLineItemsDto -> mapToDto(orderLineItemsDto))
+                .map(this::mapToDto)
                 .toList();
         order.setOrderLineItems(orderLineItems);
 
@@ -38,20 +36,27 @@ public class OrderService {
                 .toList();
 
         //Call inventory service, and place order if product is in stock
-        InventoryResponse[] inventoryResponseArray = webClientBuilder.build().get()
+        Map[] inventories = webClientBuilder.build().get()
                 .uri("http://inventory-service/api/inventory",
                         uriBuilder -> uriBuilder
-                                .queryParam("skuCode",skuCodes).build())
+                                .queryParam("skuCode", skuCodes).build())
                 .retrieve()
-                .bodyToMono(InventoryResponse[].class)
+                .bodyToMono(Map[].class)
                 .block();
 
-        boolean allProductsInStock = Arrays.stream(inventoryResponseArray)
-                .allMatch(InventoryResponse::isInStock);
+        boolean allProductsInStock = true;
 
+        for (Map e : inventories) {
+
+            if (e.containsValue(false)){
+                allProductsInStock = false;
+                break;
+            }
+        }
 
         if(allProductsInStock){
             repository.save(order);
+            return "Order Placed Successfully!!!";
         }else{
             throw new IllegalArgumentException("Product is not in stock, Please try again later!!!");
         }

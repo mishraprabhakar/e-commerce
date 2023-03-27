@@ -4,8 +4,13 @@ server:
 spring:
   application:
     name: api-gateway
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8100/realms/spring-boot-microservice-realm
 
-#Product Service route
+  #Product Service route
   cloud:
     gateway:
       discovery:

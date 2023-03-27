@@ -2,7 +2,7 @@ spring:
   #  security:
   #    user:
   #      name: user
-  #      password: passwordve
+  #      password: password
   datasource:
     url: jdbc:mysql://localhost:3306/demo
     username: root
@@ -21,4 +21,8 @@ spring:
     database: mysql
 
 server:
-  port: 0
+  port: 8083
+
+eureka:
+  instance:
+    hostname: localhost

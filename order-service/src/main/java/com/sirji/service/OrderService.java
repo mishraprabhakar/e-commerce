@@ -2,10 +2,12 @@ package com.sirji.service;
 
 import com.sirji.dto.OrderLineItemsDto;
 import com.sirji.dto.OrderRequest;
+import com.sirji.event.OrderPlacedEvent;
 import com.sirji.model.Order;
 import com.sirji.model.OrderLineItems;
 import com.sirji.repository.OrderRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -21,6 +23,8 @@ public class OrderService {
 
     private final OrderRepository repository;
     private final WebClient.Builder webClientBuilder;
+
+    private KafkaTemplate<String, OrderPlacedEvent> kafkaTemplate;
     public String placeOrder(OrderRequest orderRequest) {
         Order order = new Order();
         order.setOrderNumber(UUID.randomUUID().toString());
@@ -56,6 +60,7 @@ public class OrderService {
 
         if(allProductsInStock){
             repository.save(order);
+            kafkaTemplate.send("notificationTopic", new OrderPlacedEvent(order.getOrderNumber()));
             return "Order Placed Successfully!!!";
         }else{
             throw new IllegalArgumentException("Product is not in stock, Please try again later!!!");

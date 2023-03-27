@@ -1,3 +1,6 @@
+server:
+  port: 8081
+
 eureka:
   instance:
     hostname: localhost
@@ -20,8 +23,21 @@ spring:
         format_sql: true
     database: mysql
 
-server:
-  port: 8081
+#Kafka properties
+  kafka:
+    bootstrap-servers: localhost:9092
+    template:
+      default-topic: notificationTopic
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring:
+          json:
+            type:
+              mapping:
+                event: com.sirji.event.OrderPlacedEvent
+
 
 #Activating resilience endpoints to connect with actuators
 #management:

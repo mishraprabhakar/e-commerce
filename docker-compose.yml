@@ -1,6 +1,68 @@
 ---
 version: '3'
 services:
+
+  mysql-product:
+    image: mysql
+    container_name: mysql-product
+    environment:
+      MYSQL_DATABASE: product-service
+      MYSQL_ROOT_PASSWORD: password
+    volumes:
+      - ./mysql-product:/var/lib/mysql
+    ports:
+      - "3309:3306"
+    restart: unless-stopped
+
+  mysql-order:
+    image: mysql
+    container_name: mysql-order
+    environment:
+      MYSQL_DATABASE: order-service
+      MYSQL_ROOT_PASSWORD: password
+    volumes:
+      - ./mysql-order:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    restart: unless-stopped
+
+  mysql-inventory:
+    image: mysql
+    container_name: mysql-inventory
+    environment:
+      MYSQL_DATABASE: inventory-service
+      MYSQL_ROOT_PASSWORD: password
+    volumes:
+      - ./mysql-inventory:/var/lib/mysql
+    ports:
+      - "3308:3306"
+    restart: unless-stopped
+
+  mysql-keycloak:
+    image: mysql
+    container_name: mysql-keycloak
+    environment:
+      MYSQL_DATABASE: keycloak
+      MYSQL_ROOT_PASSWORD: password
+    volumes:
+      - ./mysql-keycloak:/var/lib/mysql
+
+  keycloak:
+    container_name: keycloak
+    image: jboss/keycloak:latest
+    command: [ "start-dev", "--import-realm"]
+    environment:
+      DB_VENDOR: MYSQL
+      DB_ADDR: mysql
+      DB_DATABASE: keycloak
+      DB_PASSWORD: password
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./realms/:/opt/keycloak/data/import/
+
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.2
     container_name: zookeeper
@@ -23,3 +85,74 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+  discovery-server:
+    image: 904ecc18a602943d42657569e5a393133566bd86eb753148514b4c76186e37ed
+    container_name: discovery-server
+#    pull-policy: always
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  api-gateway:
+    image: 1b94e57f90ace77d6a6c614d7b960c6d866d2fd61cc81eaffdefcd2da1f45606
+    container_name: api-gateway
+#    pull-policy: always
+    ports:
+      - "8181:8080"
+    expose:
+      - "8181"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY=TRACE
+    depends_on:
+      - discovery-server
+      - keycloak
+
+  product-service:
+    image: c837c98c63fee5887c0979f68f3c6d13f609b2cbe2fac1f4693800b563ec4444
+    container_name: product-service
+#    pull-policy: always
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - mysql-product
+      - discovery-server
+      - api-gateway
+
+  order-service:
+    image: d7400f502563e36ecee2afdb8f668578ba125c6bdde921c97fe0b4ffd8aec6cf
+    container_name: order-service
+#    pull-policy: always
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-order:3307/order-service
+    depends_on:
+      - mysql-order
+      - broker
+      - discovery-server
+      - api-gateway
+
+  inventory-service:
+    image: 28be3f667975f9c7ffa574165462183851c6dc6127e05f5ed2fe1c90c647a57b
+    container_name: inventory-service
+#    pull-policy: always
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-inventory:3308/inventory-service
+    depends_on:
+      - mysql-inventory
+      - discovery-server
+      - api-gateway
+
+  notification-service:
+    image: 13bc4f91dd56c396e3ecd2b50495aa08abb29af14737db204c13469b10ddcc95
+    container_name: notification-service
+#    pull-policy: always
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - broker
+      - discovery-server
+      - api-gateway
